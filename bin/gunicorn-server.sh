@@ -5,6 +5,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 case "$1" in
         start)
             cd $DIR/../
+            # echo gunicorn --config $DIR/../config/gunicorn_prod.py app.wsgi
             gunicorn --config $DIR/../config/gunicorn_prod.py app.wsgi
             cd $DIR
             echo "Waiting for Gunicorn-server to start."
