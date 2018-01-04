@@ -1,0 +1,220 @@
+@prefix fedora: <http://fedora.info/definitions/v4/repository#>
+@prefix pcdm: <http://pcdm.org/models#>
+@prefix ore: <http://www.openarchives.org/ore/terms/>
+@prefix iana: <http://www.iana.org/assignments/relation/>
+@prefix acl: <http://www.w3.org/ns/auth/acl#>
+@prefix dcterms: <http://purl.org/dc/terms/>
+@prefix fedorasystem: <info:fedora/fedora-system:def/model#>
+@prefix aic: <http://definitions.artic.edu/ontology/1.0/>
+@prefix foaf: <http://xmlns.com/foaf/0.1/>
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+@prefix dc11: <http://purl.org/dc/elements/1.1/>
+@prefix ldp: <http://www.w3.org/ns/ldp#>
+
+/* Taken from https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/blob/master/fcrepo-ldpath/src/main/resources/default.ldpath */
+
+uri      = . :: xsd:string ; /* Changed from `id` to `uri` */
+
+created = fedora:created :: xsd:string ;
+createdBy = fedora:createdBy :: xsd:string ;
+hasParent = fedora:hasParent :: xsd:string ;
+lastModified = fedora:lastModified :: xsd:string ;
+lastModifiedBy = fedora:lastModifiedBy :: xsd:string ;
+
+type = rdf:type :: xsd:anyURI ;
+
+altLabel = skos:altLabel :: xsd:string ;
+prefLabel = skos:prefLabel :: xsd:string ;
+medium = dcterms:medium :: xsd:string ;
+modified = dcterms:modified :: xsd:string ;
+rights = dc:rights | dcterms:rights :: xsd:string ;
+title = dc:title | dcterms:title :: xsd:string ;
+
+/* LAKE-specific fields */
+
+birthDate = aic:birthDate :: xsd:string ;
+deathDate = aic:deathDate :: xsd:string ;
+
+/* documentType = aic:documentType / skos:prefLabel :: xsd:string ; /* This is blank */
+/* documentType_uid = aic:documentType / aic:uid :: xsd:string ; /* This is blank */
+documentType_uri = aic:documentType :: xsd:string ;
+
+citiUid = aic:citiUid :: xsd:string ;
+
+/* The next three lines are predicated on locationType pointing to a */
+/* URI reference.  Maybe someday, but not presently, hence the 4th line. */
+/* locationType = aic:locationType / skos:prefLabel :: xsd:string ; */
+/* locationType_uid = aic:locationType / aic:uid :: xsd:string ; */
+/* locationType_uri = aic:locationType :: xsd:string ; */
+locationType = aic:locationType :: xsd:string ;
+legacyLocationType = aic:legacyLocationType :: xsd:string ;
+
+latitude = geo:lat :: xsd:float ;
+longitude = geo:long :: xsd:float ;
+galleryNumber = aic:galleryNumber :: xsd:string ;
+galleryFloor = aic:galleryFloor :: xsd:string ;
+isClosed = aic:isClosed :: xsd:string ;
+
+hasDocument = aic:hasDocument / skos:prefLabel :: xsd:string ;
+hasDocument_uid = aic:hasDocument / aic:uid :: xsd:string ;
+hasDocument_uri = aic:hasDocument :: xsd:string ;
+hasPreferredRepresentation = aic:hasPreferredRepresentation / skos:prefLabel :: xsd:string ;
+hasPreferredRepresentation_uid = aic:hasPreferredRepresentation / aic:uid :: xsd:string ;
+hasPreferredRepresentation_uri = aic:hasPreferredRepresentation :: xsd:string ;
+uid = aic:uid :: xsd:string ;
+description = dc:description | dcterms:description | dc11:description | aic:description :: xsd:string ;
+rights = dc11:rights :: xsd:string ;
+hasModel = fedorasystem:hasModel :: xsd:string ;
+
+imagingUid = aic:imagingUid :: xsd:string ;
+
+title = skos:prefLabel :: xsd:string ;
+aicStartDate = aic:aicStartDate :: xsd:string ; 
+aicEndDate = aic:aicEndDate :: xsd:string ; 
+agentName = aic:agentName :: xsd:string ;
+agent_uid = aic:agent / aic:uid :: xsd:string ;
+agent_uri = aic:agent :: xsd:string ;
+agentRoleName = aic:agentRoleName :: xsd:string ;
+agentRole_uid = aic:agentRole / aic:uid :: xsd:string ;
+agentRole_uri = aic:agentRole :: xsd:string ;
+artist = aic:artist / skos:prefLabel :: xsd:string ;
+artist_uid = aic:artist / aic:uid :: xsd:string ;
+artist_uri = aic:artist :: xsd:string ;
+creatorDisplay = aic:creatorDisplay :: xsd:string ;
+collectionStatus = aic:collectionStatus :: xsd:string ;
+copyrightNotice = aic:copyrightNotice :: xsd:string ;
+citiCreationDate = aic:created :: xsd:string ;
+citiUpdateDate = aic:updated :: xsd:string ;
+compositeWhole = aic:compositeWhole / skos:prefLabel :: xsd:string ;
+compositeWhole_uid = aic:compositeWhole / aic:uid :: xsd:string ;
+compositeWhole_uri = aic:compositeWhole :: xsd:string ;
+constituentPart = aic:constituentPart / skos:prefLabel :: xsd:string ;
+constituentPart_uid = aic:constituentPart / aic:uid :: xsd:string ;
+constituentPart_uri = aic:constituentPart :: xsd:string ;
+creditLine = aic:creditLine :: xsd:string ;
+dateDisplay = aic:dateDisplay :: xsd:string ;
+department = aic:department / skos:prefLabel :: xsd:string ;
+department_uid = aic:department / aic:uid :: xsd:string ;
+department_citiUid = aic:department / aic:citiUid :: xsd:string ;
+department_uri = aic:department :: xsd:string ;
+dimensionsDisplay = aic:dimensionsDisplay :: xsd:string ;
+earliestYear = aic:earliestYear :: xsd:integer ;
+endDate = aic:endDate :: xsd:string ; 
+exhibitionHistory = aic:exhibitionHistory :: xsd:string ;
+exhibitionObject = aic:exhibitionObject / skos:prefLabel :: xsd:string ;
+exhibitionObject_uid = aic:exhibitionObject / aic:uid :: xsd:string ;
+exhibitionObject_uri = aic:exhibitionObject :: xsd:string ;
+exhibitionPlace = aic:exhibitionPlace / fn:concat(aic:locationName,": ",aic:agentName) :: xsd:string ;
+exhibitionPlace_uid = aic:exhibitionPlace / aic:uid :: xsd:string ;
+exhibitionPlace_uri = aic:exhibitionPlace :: xsd:string ;
+exhibitionStatus = aic:exhibitionStatus / skos:prefLabel :: xsd:string ;
+exhibitionType = aic:exhibitionType :: xsd:string ;
+galleryLocation = aic:galleryLocation :: xsd:string ;
+inscriptions = aic:inscriptions :: xsd:string ;
+isHost = aic:isHost :: xsd:string ;
+isOrganizer = aic:isOrganizer :: xsd:string ;
+isPreferred = aic:isPreferred :: xsd:string ;
+latestYear = aic:latestYear :: xsd:integer ;
+locationName = aic:locationName :: xsd:string ;
+location_uid = aic:location / aic:uid :: xsd:string ;
+location_uri = aic:location :: xsd:string ;
+mainRefNumber = aic:mainRefNumber :: xsd:string ;
+mediumDisplay = aic:mediumDisplay :: xsd:string ;
+memberPreviewEndDate = aic:memberPreviewEndDate :: xsd:string ;
+memberPreviewStartDate = aic:memberPreviewStartDate :: xsd:string ;
+openingEventDate = aic:openingEventDate :: xsd:string ; 
+
+objectCommittee = aic:objectCommittee :: xsd:string ; 
+
+objectAgent = aic:objectAgent / fn:concat(aic:agentName, " (",  aic:certitudeText, ")") :: xsd:string ;
+objectAgent_uid = aic:objectAgent / aic:uid :: xsd:string ;
+objectAgent_uri = aic:objectAgent :: xsd:string ;
+
+objectCatalogRaisonne = aic:objectCatalogRaisonne / fn:concat(aic:catalogRaisonneName, " (No. ", aic:number, "; ", aic:stateEdition, ")") :: xsd:string ;
+objectCatalogRaisonne_uid = aic:objectCatalogRaisonne / aic:uid :: xsd:string ;
+objectCatalogRaisonne_uri = aic:objectCatalogRaisonne :: xsd:string ;
+
+objectCopyrightRepresentative = aic:objectCopyrightRepresentative / fn:concat(aic:agentRoleName,": ",aic:agentName) :: xsd:string ;
+objectCopyrightRepresentative_uid = aic:objectCopyrightRepresentative / aic:uid :: xsd:string ;
+objectCopyrightRepresentative_uri = aic:objectCopyrightRepresentative :: xsd:string ;
+
+objectDate = aic:objectDate / fn:concat(aic:qualifierText, ": ",aic:earliestDate, " - ", aic:latestDate) :: xsd:string ;
+objectDate_uid = aic:objectDate / aic:uid :: xsd:string ;
+objectDate_uri = aic:objectDate :: xsd:string ;
+
+objectPlace = aic:objectPlace / fn:concat(aic:qualifierText,": ",aic:locationName) :: xsd:string ;
+objectPlace_uid = aic:objectPlace / aic:uid :: xsd:string ;
+objectPlace_uri = aic:objectPlace :: xsd:string ;
+
+objectTerm = aic:objectTerm / fn:concat(aic:termTypeText,": ",aic:termText) :: xsd:string ;
+objectTerm_uid = aic:objectTerm / aic:uid :: xsd:string ;
+objectTerm_uri = aic:objectTerm :: xsd:string ;
+
+objectTitle = aic:objectTitle / fn:concat(skos:prefLabel, " (", aic:languageText, ")") :: xsd:string ;
+objectTitle_uid = aic:objectTitle / aic:uid :: xsd:string ;
+objectTitle_uri = aic:objectTitle :: xsd:string ;
+
+/* classifications = aic:objectTerm[aic:termTypeText is "Classifications"]/aic:termText :: xsd:string ; */
+/* media_materials = aic:objectTerm[aic:termTypeText is "Media/ Material"]/aic:termText :: xsd:string ; */
+/* subjects = aic:objectTerm[aic:termTypeText is "Subjects"]/aic:termText :: xsd:string ; */
+
+objectType = aic:objectType :: xsd:string ;
+placeOfOrigin = aic:placeOfOrigin :: xsd:string ;
+provenanceText = aic:provenanceText :: xsd:string ;
+publicationHistory = aic:publicationHistory :: xsd:string ;
+publishCategory = aic:publishCategory :: xsd:string ;
+publishCategoryUid = aic:publishCategoryUid :: xsd:integer ;
+qualifierText = aic:qualifierText :: xsd:string ;
+qualifier_uid = aic:qualifier / aic:uid :: xsd:string ;
+qualifier_uri = aic:qualifier :: xsd:string ;
+startDate = aic:startDate :: xsd:string ; 
+symposiumEndDate = aic:symposiumEndDate :: xsd:string ; 
+symposiumStartDate = aic:symposiumStartDate :: xsd:string ; 
+termText = aic:termText :: xsd:string ; 
+term_uid = aic:term / aic:uid :: xsd:string ;
+term_uri = aic:term :: xsd:string ;
+termTypeText = aic:termTypeText :: xsd:string ; 
+termType_uid = aic:termType / aic:uid :: xsd:string ;
+termType_uri = aic:termType :: xsd:string ;
+webCollectionPublished = aic:WebCollectionPublished :: xsd:string ;
+webExhibitionPublished = aic:WebExhibitionPublished :: xsd:string ;
+legacyPublishCategory = aic:legacyPublishCategory :: xsd:string ;
+
+legacyAssetType = aic:legacyAssetType :: xsd:string ;
+legacyCurriculum = aic:legacyCurriculum :: xsd:string ;
+legacyGradeLevel = aic:legacyGradeLevel :: xsd:string ;
+legacyPublishRealm = aic:legacyPublishRealm :: xsd:string ;
+legacyFileFormat = aic:legacyFileFormat :: xsd:string ;
+legacyFileFormatUid = aic:legacyFileFormatUid :: xsd:string ;
+legacyFileGroupId = aic:legacyFileGroupId :: xsd:string ;
+legacyRelatedArtist = aic:legacyRelatedArtist :: xsd:string ;
+legacyRelatedArtwork = aic:legacyRelatedArtwork :: xsd:string ;
+legacyDateBegin = aic:legacyDateBegin :: xsd:string ;
+legacyDateEnd = aic:legacyDateEnd :: xsd:string ;
+drupalDisplayCode = aic:drupalDisplayCode :: xsd:string ;
+legacyAudienceFrom = aic:legacyAudienceFrom :: xsd:string ;
+legacyAudienceTo = aic:legacyAudienceTo :: xsd:string ;
+legacyContent = aic:legacyContent :: xsd:string ;
+legacyContentTypePreferred = aic:legacyContentTypePreferred :: xsd:string ;
+legacyIntRefCode = aic:legacyIntRefCode :: xsd:string ;
+legacyIsCollectionsWebPublished = aic:legacyIsCollectionsWebPublished :: xsd:string ;
+legacyIsEduPortalPublished = aic:legacyIsEduPortalPublished :: xsd:string ;
+legacyIsMultimediaPortalPublished = aic:legacyIsMultimediaPortalPublished :: xsd:string ;
+legacyReferenceCode = aic:legacyReferenceCode :: xsd:string ;
+legacyPortalTags = aic:legacyPortalTags :: xsd:string ;
+legacyPortalTagsCitiUid = aic:legacyPortalTagsCitiUid :: xsd:string ;
+legacyResourceType = aic:legacyResourceType :: xsd:string ;
+legacyResourceTypeCitiUid = aic:legacyResourceTypeCitiUid :: xsd:string ;
+legacySourceDetails = aic:legacySourceDetails :: xsd:string ;
+legacyShopLink = aic:legacyShopLink :: xsd:string ;
+legacyTour = aic:legacyTour :: xsd:string ;
+
+isInNav = aic:isInNav :: xsd:string ;
+parentLabel = skos:broader / skos:prefLabel :: xsd:string ;
+parentCitiUid = skos:broader / aic:citiUid :: xsd:string ;
+sort = aic:sort :: xsd:integer ;
+pubCatType = aic:pubCatType :: xsd:string ;
+citiExtAsset = aic:citiExtAsset :: xsd:string ;
+citiThumbnail = aic:citiThumbnail :: xsd:string ;
+copyrightNotice = aic:copyrightNotice :: xsd:string ;
+

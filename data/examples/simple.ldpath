@@ -1,0 +1,34 @@
+@prefix fedora: <http://fedora.info/definitions/v4/repository#>
+@prefix pcdm: <http://pcdm.org/models#>
+@prefix ore: <http://www.openarchives.org/ore/terms/>
+@prefix iana: <http://www.iana.org/assignments/relation/>
+@prefix acl: <http://www.w3.org/ns/auth/acl#>
+@prefix dcterms: <http://purl.org/dc/terms/>
+@prefix fedorasystem: <info:fedora/fedora-system:def/model#>
+@prefix aic: <http://definitions.artic.edu/ontology/1.0/>
+@prefix foaf: <http://xmlns.com/foaf/0.1/>
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+@prefix dc11: <http://purl.org/dc/elements/1.1/>
+@prefix ldp: <http://www.w3.org/ns/ldp#>
+
+/* Taken from https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/blob/master/fcrepo-ldpath/src/main/resources/default.ldpath */
+
+uri      = . :: xsd:string ; /* Changed from `id` to `uri` */
+
+modified = dcterms:modified :: xsd:string ;
+rights = dc:rights | dcterms:rights :: xsd:string ;
+friend = foaf:knows/(foaf:name | rdfs:label) :: xsd:string ; 
+friend = foaf:knows/foaf:name | foaf:dude/rdfs:label :: xsd:string;
+
+title = rdfs:label[@de] | rdfs:label[@none] :: xsd:string ;
+foodstuff = foaf:interest[rdf:type is ex:Food] :: xsd:anyURI ;
+morefoodstuff = foaf:interest[rdf:type is ex:Food | rdf:type is ex:Drink] :: xsd:anyURI ;
+ultimatefoodstuff = foaf:interest[rdf:type is ex:Food]/rdfs:label[@es] :: xsd:anyURI ;
+
+/*
+exhibitionPlace = aic:exhibitionPlace / fn:concat(aic:locationName,": ",aic:agentName) :: xsd:string ;
+objectAgent = aic:objectAgent / fn:concat(aic:agentName, " (",  aic:certitudeText, ")") :: xsd:string ;
+*/
+
+
+/* foodstuff = foaf:interest[rdf:type is ex:Food]/rdfs:label[@es] :: xsd:string ; */

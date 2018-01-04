@@ -1,0 +1,12 @@
+DROP TABLE IF EXISTS resources;
+
+CREATE TABLE resources (
+    id INTEGER PRIMARY KEY,
+    cacheTimeout TEXT,
+    uri CHAR(254),
+    resource BLOB
+);
+
+CREATE UNIQUE INDEX idx_uri ON resources(uri);
+CREATE INDEX idx_cacheTimeout ON resources(cacheTimeout);
+
