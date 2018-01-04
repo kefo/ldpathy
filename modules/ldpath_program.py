@@ -7,6 +7,7 @@ import re
 from antlr4 import *
 from rdflib import Variable
 from rdflib.graph import Graph, URIRef
+from rdflib.plugins.sparql import prepareQuery
 
 from modules.ldprogram.LDPathProgramLexer import LDPathProgramLexer
 from modules.ldprogram.LDPathProgramParser import LDPathProgramParser
@@ -25,6 +26,12 @@ class LDPathProgram:
     
     response = {}
     
+    preparedQueries = {
+        "depth0_basic": prepareQuery("SELECT ?o WHERE { ?s ?p ?o . }"),
+        "depth1_basic": prepareQuery("SELECT ?o WHERE { ?s ?p ?t1 .?t1 ?p2 ?o . }"),
+        "depth1_optional": prepareQuery("SELECT ?t1 ?o1 ?o2 WHERE { ?s ?p ?t1 . OPTIONAL { ?t1 ?possible_p1 ?o1 .} . OPTIONAL { ?t1 ?possible_p2 ?o2 .} . }"),
+    }
+        
     def __init__(self, db=None, cache_timeout=-1):
         self._db = db
         self.cache_timeout = cache_timeout
@@ -48,9 +55,13 @@ class LDPathProgram:
         
         sparql_prefix_str = '\n'.join(sparql_prefixes)
         
+        #for i in self.preparedQueries:
+        #    self.preparedQueries[i] = self.preparedQueries[i].replace('%PREFIX%', sparql_prefix_str)
+        #    print(self.preparedQueries[i])
+        
         depth = 0
         self.logger.debug("Building queries (includes querying the graph, i.e. collecting the values)")
-        self._build_query(uri, depth, self.parsed["expressions"], "")
+        self._build_query(uri, depth, self.parsed["expressions"], {})
         
         self.logger.debug("Parsing response")
         self._build_response(self.parsed["expressions"], "", "")
@@ -139,86 +150,159 @@ class LDPathProgram:
                 self._build_response(e["then"], returnval, datatype)
 
 
-    def _build_query(self, s, depth, expressions, stmt):
+    def _build_query(self, s, depth, expressions, bindings):
+        
         for e in expressions:
             
-            if len(e["then"]) > 0 and e["qname_expanded"] == "":
-                # qname_expanded is null, but there is depth here.
-                # Probably a function.
-                
-                variables = set()
-                stmts = []
-                for e1 in e["then"]:
-                    if e1["qname_expanded"] != "":
-                        
-                        new_stmt = "OPTIONAL { %S% <%P%> %O% . } ."
-                
-                        if s.startswith('?'):
-                            new_stmt = new_stmt.replace('%S%', s)
-                            variables.add(s)
-                        else:
-                            new_stmt = new_stmt.replace('%S%', '<' + s + '>')
-                
-                        new_stmt = new_stmt.replace('%P%', e1["qname_expanded"])
-                        
-                        new_stmt = new_stmt.replace('%O%', '?' + e1["qname"].replace(':', '') )
-                        variables.add('?' + e1["qname"].replace(':', ''))
+            # These are common to all queries.
+            if depth == 0:
+                bindings["s"] = URIRef(s)
+            if depth == 0 and e["qname_expanded"] != "":
+                bindings["p"] = URIRef(e["qname_expanded"])
+            if depth == 1 and e["qname_expanded"] != "":
+                bindings["p2"] = URIRef(e["qname_expanded"])
             
-                        stmts.append(new_stmt)
+            if e["qname"] == ".":
+                '''
+                    Example:
+                    {
+                        "datatype": "xsd:string",
+                        "filters": [],
+                        "function": "",
+                        "langtag_filter": "",
+                        "qname": ".",
+                        "qname_expanded": "",
+                        "quotedtext": "",
+                        "returnVal": "uri",
+                        "then": []
+                    },
+                '''
+                e["query"] = "."
+                e["values"] = [[s]]
+            elif len(e["then"]) == 0 and e["qname_expanded"] != "":
                 
-                query = """
-                        SELECT %VARS%
-                            WHERE {
-                            %STMTS%
-                            %FILTERS%
-                        }
-                    """
-                query = query.replace('%VARS%', ' '.join(variables))
-                query = query.replace('%STMTS%', stmt + "\n".join(stmts))
-                    
-                if 'filters' not in e or len(e["filters"]) == 0:
-                    query = query.replace('%FILTERS%', '')
+                if depth == 0:
+                    '''
+                    Depth is 0 (top) and there are no sub selects.
+                    The most basic query.
+                    These all should have a valid qname_expanded entry, yes?
+                    Example:
+                        {
+                            "datatype": "xsd:string",
+                            "function": "",
+                            "langtag_filter": "",
+                            "qname": "aic:objectTerm",
+                            "qname_expanded": "http://definitions.artic.edu/ontology/1.0/objectTerm",
+                            "quotedtext": "",
+                            "returnVal": "objectTerm_uri",
+                            "then": []
+                        },
+                    '''
+                    q = self.preparedQueries["depth0_basic"]
+                elif depth == 1:
+                    '''
+                    Example:
+                        {
+                            "datatype": "xsd:string",
+                            "function": "",
+                            "langtag_filter": "",
+                            "qname": "aic:objectTerm",
+                            "qname_expanded": "http://definitions.artic.edu/ontology/1.0/objectTerm",
+                            "quotedtext": "",
+                            "returnVal": "objectTerm_uid",
+                            "then": [
+                                {
+                                    "function": "",
+                                    "langtag_filter": "",
+                                    "qname": "aic:uid",
+                                    "qname_expanded": "http://definitions.artic.edu/ontology/1.0/uid",
+                                    "quotedtext": "",
+                                    "then": []
+                                }
+                            ]
+                        },
+                    '''
+                    q = self.preparedQueries["depth1_basic"]
                 
-                e["query"] = query
-                values = self.graph.query(query)
+                e["query"] = q._original_args[0]
+                values = self.graph.query(q, initBindings=bindings)
                 e["values"] = values
             
-            elif e["qname_expanded"] != "":
-            
-                new_stmt = "%S% <%P%> %O% ."
+            elif len(e["then"]) > 0 and e["qname_expanded"] == "":
+                # qname_expanded is null, but there is depth here.
+                # Probably a function.
+                '''
+                    Example:
+                    {
+                        "datatype": "xsd:string",
+                        "function": "",
+                        "langtag_filter": "",
+                        "qname": "aic:objectTitle",
+                        "qname_expanded": "http://definitions.artic.edu/ontology/1.0/objectTitle",
+                        "quotedtext": "",
+                        "returnVal": "objectTitle",
+                        "then": [
+                            {
+                                "function": "fn:concat",
+                                "langtag_filter": "",
+                                "qname": "fn:concat(skos:prefLabel,\" (\",aic:languageText,\")\")",
+                                "qname_expanded": "",
+                                "quotedtext": "",
+                                "then": [
+                                    {
+                                        "function": "",
+                                        "langtag_filter": "",
+                                        "qname": "skos:prefLabel",
+                                        "qname_expanded": "http://www.w3.org/2004/02/skos/core#prefLabel",
+                                        "quotedtext": "",
+                                        "then": []
+                                    },
+                                    {
+                                        "function": "",
+                                        "langtag_filter": "",
+                                        "qname": "",
+                                        "qname_expanded": "",
+                                        "quotedtext": "\" (\"",
+                                        "then": []
+                                    },
+                                    {
+                                        "function": "",
+                                        "langtag_filter": "",
+                                        "qname": "aic:languageText",
+                                        "qname_expanded": "http://definitions.artic.edu/ontology/1.0/languageText",
+                                        "quotedtext": "",
+                                        "then": []
+                                    },
+                                    {
+                                        "function": "",
+                                        "langtag_filter": "",
+                                        "qname": "",
+                                        "qname_expanded": "",
+                                        "quotedtext": "\")\"",
+                                        "then": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                '''
                 
-                if s.startswith('?'):
-                    new_stmt = new_stmt.replace('%S%', s)
-                else:
-                    new_stmt = new_stmt.replace('%S%', '<' + s + '>')
+                count = 1
+                for e1 in e["then"]:
+                    if e1["qname_expanded"] != "":
+                        bindings["possible_p" + str(count)] = e1["qname_expanded"]
+                        bindings["o" + str(count)] = e1["qname"].replace(':', '')
+                        count += 1
                 
-                new_stmt = new_stmt.replace('%P%', e["qname_expanded"])
+                q = self.preparedQueries["depth1_optional"]
+                
+                e["query"] = q._original_args[0]
+                values = self.graph.query(q, initBindings=bindings)
+                e["values"] = values
             
-                if len(e["then"]) == 0:
-                    new_stmt = new_stmt.replace('%O%', '?o')
-                    query = """
-                        SELECT ?o
-                            WHERE {
-                            %STMTS%
-                            %FILTERS%
-                        }
-                    """
-                    query = query.replace('%STMTS%', stmt + new_stmt)
-                    
-                    if 'filters' not in e or len(e["filters"]) == 0:
-                        query = query.replace('%FILTERS%', '')
-                    
-                    e["query"] = query
-                    values = self.graph.query(query)
-                    e["values"] = values
-                        
-                else:
-                    new_depth = depth + 1
-                    new_s = '?t' + str(new_depth)
-                    
-                    new_stmt = new_stmt.replace('%O%', new_s)
-                    
-                    self._build_query(new_s, new_depth, e["then"], stmt + new_stmt)
+            else:
+                new_depth = depth + 1
+                self._build_query(s, new_depth, e["then"], bindings)
 
 
     def _build_graph(self, uri, expressions):
