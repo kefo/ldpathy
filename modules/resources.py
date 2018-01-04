@@ -39,13 +39,27 @@ class Resources:
                 #resource = self._db.query(sql_query, values)
                 
                 sql_query = "SELECT * FROM resources WHERE uri = '" + uri + "';"
-                resource = self._db.query(sql_query)
-                if resource != None:
+                rows = self._db.query(sql_query)
+                if rows != None:
                     # This URI was found in the DB, but is it too old?
                     self.logger.info("Found URI in cache db: {}".format(uri))
                     found_in_db = True
-                    
                     now = datetime.datetime.now()
+                    
+                    # This is fast by the smallest of margins than the below, commented out section.
+                    cacheTimeout = datetime.datetime.strptime( rows[0][1], "%Y-%m-%d %H:%M:%S.%f" )
+                    if cacheTimeout > now:
+                        # It is not too old.  We'll use this one.
+                        self.logger.info("Using cached version: {}".format(uri))
+                        fetch_new = False
+                        now_plus = now + datetime.timedelta(seconds = self.cache_timeout)
+                        self.resources[uri] = {}
+                        self.resources[uri]["n3"] = rows[0][3]
+                        self.resources[uri]["cacheTimeout"] = now_plus
+                    else:
+                        self.logger.info("URI expired: {}".format(uri))
+                    
+                    '''
                     sql_query = "SELECT * FROM resources WHERE uri = ? AND cacheTimeout > ?;"
                     values = (uri, now)
                     resource = self._db.query(sql_query, values)
@@ -60,6 +74,7 @@ class Resources:
                         self.resources[uri]["cacheTimeout"] = now_plus
                     else:
                         self.logger.info("URI expired: {}".format(uri))
+                    '''
             
             if fetch_new:
                 self.logger.info("Fetching original resource for URI: {}".format(uri))
