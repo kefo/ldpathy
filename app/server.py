@@ -34,12 +34,45 @@ def init_db():
         else:
             return ("Something went horribly wrong", 500)
 
-
-@app.route("/db/resources")
-def etags():
+@app.route("/db/<db_name>/clearall")
+def clear_table(db_name):
+    with app.app_context():
+        logging.info('Clearing all rows from table: ' + db_name)
+        db = DB(app, config["sqlite"]["db"])
+        numrows = db.clear(db_name)
+        if numrows != None:
+            line = 'Number of rows deleted from ' + db_name + ': ' + str(numrows)
+            logging.info(line)
+            response = Response(line)
+            response.headers['Content-type'] = "text/plain"
+            return (response, 200)
+        else:
+            line = "Failed to delete rows from table: " + db_name + " -- Mind you, there may have been no rows to delete."
+            logging.info(line)
+            logging.info("numrows was: {}".format(numrows))
+            return (line, 500)
+            
+@app.route("/db/programs/list")
+def programs():
     with app.app_context():
         db = DB(app, config["sqlite"]["db"])
-        results = db.resources()
+        results = db.rows("programs")
+        if results != None:
+            output = "id        hash       program\n"
+            for i in results:
+                output += str(i[0]) + "     " + i[1] + "        " + i[2] + "\n"
+            response = Response(output)
+            response.headers['Content-type'] = "text/plain"
+            return (response, 200)
+        else:
+            return ("Results was None?", 500)
+
+
+@app.route("/db/resources/list")
+def resources():
+    with app.app_context():
+        db = DB(app, config["sqlite"]["db"])
+        results = db.rows("resources")
         if results != None:
             output = "id        cacheTimeout       uri\n"
             for i in results:
@@ -51,7 +84,7 @@ def etags():
             return ("Results was None?", 500)
             
 
-@app.route("/db/clearexpired")
+@app.route("/db/resources/clearexpired")
 def clearexpired():
     with app.app_context():
         db = DB(app, config["sqlite"]["db"])
@@ -84,7 +117,6 @@ def run_ldpath_program():
 
 
 
-
 def load_app(configpath):
     global config
     config = yaml.safe_load(open(configpath))
@@ -98,6 +130,13 @@ def load_app(configpath):
     logging.config.dictConfig(config["logging"])
     logging.info('Started')
     logger = getLogger(__name__)
+    
+    with app.app_context():
+        logging.info('Clearing all cached programs.')
+        db = DB(app, config["sqlite"]["db"])
+        numrows = db.clear("programs")
+        if numrows != None:
+            logging.info('Expired resources deleted: ' + str(numrows))
 
     logger.info("Application loaded using config: {}".format(config))
     return app
@@ -116,6 +155,13 @@ if __name__ == "__main__":
     logging.config.dictConfig(config["logging"])
     logging.info('Started')
     logger = getLogger(__name__)
+    
+    with app.app_context():
+        logging.info('Clearing all cached programs.')
+        db = DB(app, config["sqlite"]["db"])
+        numrows = db.clear("programs")
+        if numrows != None:
+            logging.info('Expired resources deleted: ' + str(numrows))
 
     logger.info("Application loaded using config: {}".format(config))
     app.run(debug=True, host="0.0.0.0", port=8000)

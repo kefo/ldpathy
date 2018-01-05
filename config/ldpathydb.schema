@@ -10,3 +10,13 @@ CREATE TABLE resources (
 CREATE UNIQUE INDEX idx_uri ON resources(uri);
 CREATE INDEX idx_cacheTimeout ON resources(cacheTimeout);
 
+
+DROP TABLE IF EXISTS programs;
+
+CREATE TABLE programs (
+    id INTEGER PRIMARY KEY,
+    hash CHAR(32),
+    program TEXT
+);
+
+CREATE UNIQUE INDEX idx_hash ON programs(hash);
