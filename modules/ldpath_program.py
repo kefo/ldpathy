@@ -1,12 +1,17 @@
 import os 
 import sys
 import json
-import datetime
 import re
+
+from hashlib import md5
+
+import arrow
 
 from antlr4 import *
 from rdflib import Variable
 from rdflib.graph import Graph, URIRef
+from rdflib.namespace import XSD
+from rdflib.query import ResultRow
 from rdflib.plugins.sparql import prepareQuery
 
 from modules.ldprogram.LDPathProgramLexer import LDPathProgramLexer
@@ -86,17 +91,32 @@ class LDPathProgram:
             self.raw = FileStream(self.loc)
     
     def parse(self):
-        lexer = LDPathProgramLexer(self.raw)
-        stream = CommonTokenStream(lexer)
-        parser = LDPathProgramParser(stream)
-        tree = parser.program()
+        program_hash = md5(self.raw.strdata.encode('utf-8')).hexdigest()
+        
+        sql_query = "SELECT * FROM programs WHERE hash = '" + program_hash + "';"
+        rows = self._db.query(sql_query)
+        if rows != None:
+            self.logger.info("Cached program found.")
+            self.parsed = json.loads(rows[0][2])
+        else:
+            self.logger.info("NO cached program found.")
+            self.logger.info("Must parse...")
+            lexer = LDPathProgramLexer(self.raw)
+            stream = CommonTokenStream(lexer)
+            parser = LDPathProgramParser(stream)
+            tree = parser.program()
     
-        listener = LDPathProgramListener()
-        walker = ParseTreeWalker()
-        walker.walk(listener, tree)
+            listener = LDPathProgramListener()
+            walker = ParseTreeWalker()
+            walker.walk(listener, tree)
     
-        # print(json.dumps(listener.output, sort_keys=True, indent=4))
-        self.parsed = listener.output
+            # print(json.dumps(listener.output, sort_keys=True, indent=4))
+            self.logger.info("Storing parsed program...")
+            output_json = json.dumps(listener.output)
+            sql_query = "INSERT INTO programs (hash, program) VALUES (?, ?)"
+            values = (program_hash, output_json )
+            dbid = self._db.update(sql_query, values)
+            self.parsed = listener.output
 
 
     def _build_response(self, expressions, returnval, datatype):
@@ -140,9 +160,17 @@ class LDPathProgram:
                     self.response[returnval] = answers
             elif 'query' in e:
                 for v in e["values"]:
+                    if isinstance(v, ResultRow):
+                        value = v[0]
+                        if not isinstance(value, URIRef):
+                            if value.datatype == XSD.dateTime:
+                                value = arrow.get(value).format('YYYY-MM-DDTHH:mm:ss') + ".000Z"
+                    else:
+                        value = v
+                        
                     a = {
                         "type": datatype,
-                        "value": v[0]
+                        "value": value
                     }
                     answers.append(a)
                 self.response[returnval] = answers
@@ -178,7 +206,8 @@ class LDPathProgram:
                     },
                 '''
                 e["query"] = "."
-                e["values"] = [[s]]
+                # e["values"] = [[s]]
+                e["values"] = [URIRef(s)]
             elif len(e["then"]) == 0 and e["qname_expanded"] != "":
                 
                 if depth == 0:
